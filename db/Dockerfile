@@ -1,4 +1,4 @@
-FROM postgres:9.4-alpine
+FROM postgres:9.6-alpine
 
 RUN apk update \
     && apk add --no-cache python python-dev ca-certificates gcc linux-headers musl-dev \
