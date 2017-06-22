@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 generate_salt() {
   cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 48 | head -n 1
