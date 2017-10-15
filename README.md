@@ -16,23 +16,27 @@ The following instructions deploy Mattermost in a production configuration using
 
 ### Requirements
 
-* [docker]
-* [docker-compose]
+* [docker] (version `1.10.0+`)
+* [docker-compose] (version `1.6.0+` to support Compose file version `2.0`)
 
 ### Choose Edition to Install
 
 If you want to install Enterprise Edition, you can skip this section.
 
-To install the Team Edition, comment out the following line in docker-compose.yaml file:
+To install the team edition, comment out the two following lines in docker-compose.yaml file:
+```yaml
+args:
+  - edition=team
 ```
-dockerfile: Dockerfile-enterprise
-```
+The `app` Dockerfile will read the `edition` build argument to install Team (`edition = 'team'`) or Entreprise (`edition != team`) edition.
 
 ### Database container
 This repository offer a Docker image for the Mattermost database. It is a customized PostgreSQL image that you should configure with following environment variables :
 * `POSTGRES_USER`: database username
 * `POSTGRES_PASSWORD`: database password
 * `POSTGRES_DB`: database name
+
+It is possible to use your own PostgreSQL database, or even use MySQL. But you will need to ensure that Application container can connect to the database (see [Application container](#application-container))
 
 #### AWS
 If deploying to AWS, you could also set following variables to enable [Wal-E](https://github.com/wal-e/wal-e) backup to S3 :
@@ -63,8 +67,11 @@ If your database use some custom host and port, it is also possible to configure
 If you use a Mattermost configuration file on a different location than the default one (`/mattermost/config/config.json`) :
 * `MM_CONFIG`: configuration file location inside the container.
 
-If you choose to use MySQL instead of PostgreSQL, you should set a different datasource :
-* `MM_SQLSETTINGS_DATASOURCE` : `"$MM_USERNAME:$MM_PASSWORD@tcp($DB_HOST:$DB_PORT_NUMBER)/$MM_DBNAME?charset=utf8mb4,utf8&readTimeout=30s&writeTimeout=30s"`
+If you choose to use MySQL instead of PostgreSQL, you should set a different datasource and SQL driver :
+* `DB_PORT_NUMBER` : `3306`
+* `MM_SQLSETTINGS_DRIVERNAME` : `mysql`
+* `MM_SQLSETTINGS_DATASOURCE` : `MM_USERNAME:MM_PASSWORD@tcp(DB_HOST:DB_PORT_NUMBER)/MM_DBNAME?charset=utf8mb4,utf8&readTimeout=30s&writeTimeout=30s"`
+Don't forget to replace all entries (beginning by `MM_` and `DB_`) in `MM_SQLSETTINGS_DATASOURCE` with the real variables values.
 
 ### Web server container
 This image is optional, you should not use it you have your own reverse-proxy. It is a simple front Web server for the Mattermost app container.
@@ -76,39 +83,49 @@ Put your SSL certificate as `./volumes/web/cert/cert.pem` and the private key th
 no password as `./volumes/web/cert/key-no-password.pem`. If you don't have
 them you may generate a self-signed SSL certificate.
 
-## Starting/Stopping
+### Starting/Stopping Docker
 
-### Start
+#### Start
 ```
 docker-compose start
 ```
 
-### Stop
+#### Stop
 ```
 docker-compose stop
 ```
 
-### Update
+### Removing Docker
 
-Make sure to backup Mattermost data before proceeding.
+#### Remove the containers
+```
+docker-compose stop && docker-compose rm
+```
+
+#### Remove the data and settings of your Mattermost instance
+```
+sudo rm -rf volumes
+```
+
+## Update Mattermost to latest version
+
+First, shutdown your containers to back up your data.
+
 ```
 docker-compose down
+```
+
+Back up your mounted volumes to save your data. If you use the default `docker-compose.yml` file proposed on this repository, your data is on `./volumes/` folder.
+
+Then run the following commands.
+
+```
 git pull
 docker-compose build
 docker-compose up -d
 ```
 
-## Removing
-
-### Remove the containers
-```
-docker-compose stop && docker-compose rm
-```
-
-### Remove the data and settings of your Mattermost instance
-```
-sudo rm -rf volumes
-```
+Your Docker image should now be on the latest Mattermost version.
 
 ## Upgrading to Team Edition 3.0.x from 2.x
 
@@ -121,6 +138,27 @@ docker-compose run app -upgrade_db_30
 docker-compose up -d
 ```
 See the [offical Upgrade Guide](http://docs.mattermost.com/administration/upgrade.html) for more details.
+
+## Installation using Docker Swarm Mode
+
+The following instructions deploy Mattermost in a production configuration using docker swarm mode on one node.
+Running containerized applications on multi-node swarms involves specific data portability and replication handling that are not covered here.
+
+### Requirements
+
+* [docker] (1.12.0+)
+
+### Swarm Mode Installation
+
+First, create mattermost directory structure on the docker hosts:
+```
+mkdir -p /var/lib/mattermost/{cert,config,data,logs}
+```
+
+Then, fire up the stack in your swarm:
+```
+docker stack deploy -c contrib/swarm/docker-stack.yml mattermost
+```
 
 ## Known Issues
 
