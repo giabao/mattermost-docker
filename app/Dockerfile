@@ -4,9 +4,6 @@ FROM ubuntu:14.04
 ENV PATH="/mattermost/bin:${PATH}"
 ENV MM_VERSION=4.3.0
 
-# Build argument to set Mattermost edition
-ARG edition=entreprise
-
 # Install some needed packages
 RUN apt-get update \
     && apt-get -y install \
@@ -17,6 +14,7 @@ RUN apt-get update \
 
 # Get Mattermost
 RUN mkdir -p /mattermost/data \
+    && echo "building for edition = $edition" \
     && if [ "$edition" = "team" ] ; then curl https://releases.mattermost.com/$MM_VERSION/mattermost-team-$MM_VERSION-linux-amd64.tar.gz | tar -xvz ; \
       else curl https://releases.mattermost.com/$MM_VERSION/mattermost-$MM_VERSION-linux-amd64.tar.gz | tar -xvz ; fi \
     && cp /mattermost/config/config.json /config.json.save \
