@@ -4,6 +4,9 @@ FROM ubuntu:14.04
 ENV PATH="/mattermost/bin:${PATH}"
 ENV MM_VERSION=4.3.0
 
+# Build argument to set Mattermost edition		
+ARG edition=entreprise
+
 # Install some needed packages
 RUN apt-get update \
     && apt-get -y install \
